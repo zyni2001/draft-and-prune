@@ -2,6 +2,21 @@
 
 A neuro-symbolic tool that combines LLMs with symbolic solvers for logical reasoning using multi-path ensemble with sketched planning, code generation, and path pruning.
 
+Paper: [Draft-and-Prune: Improving the Reliability of Auto-formalization for Logical Reasoning](https://arxiv.org/abs/2603.17233)
+
+## Citation
+
+If you use this repository, please cite:
+
+```bibtex
+@article{ni2026draftandprune,
+  title   = {Draft-and-Prune: Improving the Reliability of Auto-formalization for Logical Reasoning},
+  author  = {Ni, Zhiyu and Liang, Zheng and Song, Liangcheng and Cao, Chenrui and Zhang, Xian and Sangiovanni-Vincentelli, Alberto and Nuzzo, Pierluigi},
+  journal = {arXiv preprint arXiv:2603.17233},
+  year    = {2026}
+}
+```
+
 ## Quick Start
 
 ```bash
