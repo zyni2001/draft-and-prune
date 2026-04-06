@@ -6,7 +6,18 @@ Paper: [Draft-and-Prune: Improving the Reliability of Auto-formalization for Log
 
 **Related: [Agentified Assessment of Logical Reasoning Agents](https://arxiv.org/abs/2603.02788):** an **assessor agent** runs the benchmark loop (tasks, budgets, parsing, failure logs) so evaluation stays **reproducible** when symbolic runs fail; the system under test only needs a standard **A2A** interface.
 
-**Cleaned benchmarks we released:** We also **fixed and republished** two widely used logical-reasoning benchmark — **[FOLIO](https://huggingface.co/datasets/yfxiao/folio-refined)** and **[AR-LSAT](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229)**. 
+**Cleaned benchmarks we released:** We also **fixed and republished** two widely used logical-reasoning benchmark — **[FOLIO](https://huggingface.co/datasets/yfxiao/folio-refined)** and **[AR-LSAT](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229)**.
+
+## Results preview (AR-LSAT)
+
+Accuracy vs. number of sampled paths (**Ours** vs. **CoT-SC**) on the cleaned AR-LSAT split, for **GPT-5.2** (left) and **Gemini-3-flash** (right).
+
+<video width="100%" controls playsinline muted>
+  <source src="https://raw.githubusercontent.com/zyni2001/draft-and-prune/clean/assets/AR-LSAT_dp_vs_cotsc_gpt52_gemini3flash_social.mp4" type="video/mp4">
+  <a href="https://raw.githubusercontent.com/zyni2001/draft-and-prune/clean/assets/AR-LSAT_dp_vs_cotsc_gpt52_gemini3flash_social.mp4">Download MP4</a>
+</video>
+
+Repository path (for clones): [`assets/AR-LSAT_dp_vs_cotsc_gpt52_gemini3flash_social.mp4`](assets/AR-LSAT_dp_vs_cotsc_gpt52_gemini3flash_social.mp4).
 
 ## Quick Start
 
