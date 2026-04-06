@@ -4,7 +4,9 @@ A neuro-symbolic tool that combines LLMs with symbolic solvers for logical reaso
 
 Paper: [Draft-and-Prune: Improving the Reliability of Auto-formalization for Logical Reasoning](https://arxiv.org/abs/2603.17233)
 
-Related: [Agentified Assessment of Logical Reasoning Agents](https://arxiv.org/abs/2603.02788) — an agent-based evaluation framework for logical reasoning, with the solver-verified [FOLIO-Refined](https://huggingface.co/datasets/yfxiao/folio-refined) dataset.
+**Related: [Agentified Assessment of Logical Reasoning Agents](https://arxiv.org/abs/2603.02788):** an **assessor agent** runs the benchmark loop (tasks, budgets, parsing, failure logs) so evaluation stays **reproducible** when symbolic runs fail; the system under test only needs a standard **A2A** interface.
+
+**Cleaned benchmarks we released:** We also **fixed and republished** two widely used logical-reasoning benchmark — **[FOLIO](https://huggingface.co/datasets/yfxiao/folio-refined)** and **[AR-LSAT](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229)**. 
 
 ## Quick Start
 
@@ -119,9 +121,9 @@ python analysis_pruning_and_ensemble_simulation.py input.csv --pruning-mode both
 
 | Dataset                                | Source                                                                             |
 | -------------------------------------- | ---------------------------------------------------------------------------------- |
-| AR-LSAT                                | [HuggingFace](https://huggingface.co/datasets/tasksource/lsat-ar)                  |
-| AR-LSAT (corrected 229-sample variant) | [HuggingFace](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229) |
-| FOLIO-Refined                          | [HuggingFace](https://huggingface.co/datasets/yfxiao/folio-refined)                |
+| AR-LSAT (original)                     | [HuggingFace](https://huggingface.co/datasets/tasksource/lsat-ar)                  |
+| AR-LSAT — **cleaned** 229-sample split | [HuggingFace](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229) |
+| FOLIO — **cleaned** (FOLIO-Refined)    | [HuggingFace](https://huggingface.co/datasets/yfxiao/folio-refined)                |
 | ProofWriter                            | [HuggingFace](https://huggingface.co/datasets/tasksource/proofwriter)              |
 | ProntoQA                               | [HuggingFace](https://huggingface.co/datasets/renma/ProntoQA)                      |
 | LogicalDeduction                       | [HuggingFace](https://huggingface.co/datasets/maveriq/bigbenchhard)                |
