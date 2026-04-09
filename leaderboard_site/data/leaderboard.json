@@ -1,15 +1,15 @@
 {
   "meta": {
-    "title": "Reasoner Arena",
+    "title": "Formal Reasoner Arena",
     "updatedAt": "2026-04-09",
     "dataset": "AR-LSAT",
     "protocol": "zero-shot adaptive-agent",
     "promptMode": "Zero-shot adaptive-agent",
     "toolMode": "Direct answer or FOL solver call",
     "totalSamples": 230,
+    "currentTrackStats": "230 samples",
     "pills": [
       "FOL benchmark suite",
-      "230 total samples",
       "Zero-shot adaptive-agent",
       "Direct answer or FOL solver call"
     ],
