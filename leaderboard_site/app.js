@@ -69,7 +69,8 @@ function renderBenchmarkSwitcher(tracks, activeId, onSelect) {
 }
 
 async function boot() {
-  const res = await fetch(dataUrl);
+  // Avoid stale leaderboard.json after deploys (GitHub Pages / browser HTTP cache).
+  const res = await fetch(dataUrl, { cache: "no-store" });
   const payload = await res.json();
   renderMeta(payload.meta);
   const tracks = payload.tracks;
