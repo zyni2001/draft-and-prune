@@ -4,13 +4,19 @@
     "updatedAt": "2026-04-09",
     "dataset": "AR-LSAT",
     "protocol": "zero-shot adaptive-agent",
-    "promptMode": "Zero-shot tool coding",
-    "toolMode": "Direct answer or Z3 tool call",
+    "promptMode": "Zero-shot adaptive-agent",
+    "toolMode": "Direct answer or FOL solver call",
     "totalSamples": 230,
+    "pills": [
+      "FOL benchmark suite",
+      "230 total samples",
+      "Zero-shot adaptive-agent",
+      "Direct answer or FOL solver call"
+    ],
     "rules": [
-      "Models can answer directly or call the local Z3 tool.",
-      "Main board uses only finished runs collected under the current zero-shot adaptive-agent protocol.",
-      "Rankings are based on all 230 AR-LSAT samples.",
+      "Models can answer directly or call a local first-order-logic solver.",
+      "Main board uses only finished runs collected under the current zero-shot adaptive-agent FOL protocol.",
+      "Rankings are based on all 230 AR-LSAT first-order-logic samples.",
       "Scores shown here are accuracy, not preference votes."
     ]
   },
@@ -19,13 +25,13 @@
       "name": "AR-LSAT",
       "currentModels": 3,
       "targetModels": 6,
-      "note": "Current production benchmark for the adaptive-agent leaderboard."
+      "note": "Current production benchmark for the first-order-logic adaptive-agent leaderboard."
     },
       {
         "name": "ProverQA",
         "currentModels": 0,
         "targetModels": 6,
-        "note": "Reserved next benchmark. Dataset integration planned after the AR-LSAT board stabilizes."
+        "note": "Reserved next first-order-logic benchmark. Dataset integration follows after the AR-LSAT board stabilizes."
       }
     ],
     "boards": {

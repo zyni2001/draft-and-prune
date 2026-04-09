@@ -13,7 +13,7 @@ function rankModels(models) {
 function renderMeta(meta) {
   document.getElementById("updated-at").textContent = meta.updatedAt;
   document.getElementById("protocol-name").textContent = `${meta.dataset} · ${meta.protocol}`;
-  const pills = [
+  const pills = meta.pills ?? [
     `${meta.dataset} benchmark`,
     `${meta.totalSamples} total samples`,
     meta.promptMode,
