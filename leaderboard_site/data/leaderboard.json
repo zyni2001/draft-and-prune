@@ -70,6 +70,19 @@
     ],
     "proverqa-hard": [
       {
+        "id": "gemini-3-flash-preview-proverqa-hard",
+        "name": "Gemini 3 Flash Preview",
+        "provider": "Google",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.768,
+        "sampleCount": 500,
+        "totalSamples": 500,
+        "toolRate": 1.0,
+        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-gemini-3-flash-preview-zero_shot-daa298ca-1a84-4fd6-ae43-06978625ab10",
+        "note": "Finished full run on the ProverQA hard split."
+      },
+      {
         "id": "gpt-5.4-nano-proverqa-hard",
         "name": "GPT-5.4 Nano",
         "provider": "OpenAI",
