@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "title": "Reasoner Arena",
+    "updatedAt": "2026-04-09",
+    "dataset": "AR-LSAT",
+    "protocol": "zero-shot adaptive-agent",
+    "promptMode": "Zero-shot tool coding",
+    "toolMode": "Direct answer or Z3 tool call",
+    "totalSamples": 230,
+    "rules": [
+      "Models can answer directly or call the local Z3 tool.",
+      "Main board uses only finished runs collected under the current zero-shot adaptive-agent protocol.",
+      "Rankings are based on all 230 AR-LSAT samples.",
+      "Scores shown here are accuracy, not preference votes."
+    ]
+  },
+  "benchmarks": [
+    {
+      "name": "AR-LSAT",
+      "currentModels": 3,
+      "targetModels": 6,
+      "note": "Current production benchmark for the adaptive-agent leaderboard."
+    },
+      {
+        "name": "ProverQA",
+        "currentModels": 0,
+        "targetModels": 6,
+        "note": "Reserved next benchmark. Dataset integration planned after the AR-LSAT board stabilizes."
+      }
+    ],
+    "boards": {
+      "current": [
+      {
+        "id": "gemini-3-flash-preview",
+        "name": "Gemini 3 Flash Preview",
+        "provider": "Google",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.9522,
+        "sampleCount": 230,
+        "totalSamples": 230,
+        "toolRate": 0.9478,
+        "directAccuracy": 0.9167,
+        "z3Accuracy": 0.9541,
+        "runPath": "results/results_2026-04-09/adaptive-agent-AR-LSAT-model-gemini-3-flash-preview-zero_shot-d8ee4ba7-95a0-4fdb-9868-8a9a9409a288",
+        "note": "Finished full run under the current zero-shot adaptive protocol."
+      },
+      {
+        "id": "gpt-5.4-nano",
+        "name": "GPT-5.4 Nano",
+        "provider": "OpenAI",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.7435,
+        "sampleCount": 230,
+        "totalSamples": 230,
+        "toolRate": 1.0,
+        "directAccuracy": null,
+        "z3Accuracy": 0.7435,
+        "runPath": "results/results_2026-04-09/adaptive-agent-AR-LSAT-model-gpt-5.4-nano-zero_shot-b064e79b-2cf5-4137-be63-2f39a009c2e3",
+        "note": "Finished full run. The model effectively commits to the tool path on every sample."
+      },
+      {
+        "id": "gpt-5.4",
+        "name": "GPT-5.4",
+        "provider": "OpenAI",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.7391,
+        "sampleCount": 230,
+        "totalSamples": 230,
+        "toolRate": 0.6217,
+        "directAccuracy": 0.4713,
+        "z3Accuracy": 0.9021,
+        "runPath": "results/results_2026-04-09/adaptive-agent-AR-LSAT-model-gpt-5.4-zero_shot-9f8aaf8b-3359-40ad-aa1d-9d046ac773c6",
+        "note": "Finished full run. Strong when it routes into Z3, less accurate on direct-only samples."
+      }
+    ]
+  }
+}

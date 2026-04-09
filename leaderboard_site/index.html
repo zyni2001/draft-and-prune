@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reasoner Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Adaptive Tool-Use Benchmark</p>
+          <h1>Reasoner Arena</h1>
+          <p class="hero-text">
+            A live leaderboard for AR-LSAT runs where models can either answer
+            directly or call Z3. Current scores are accuracy on completed
+            samples, with finished runs and live runs shown together.
+          </p>
+          <div class="meta-pills" id="meta-pills"></div>
+        </div>
+        <div class="hero-panel">
+          <div class="panel-label">Snapshot</div>
+          <div class="panel-value" id="updated-at">Loading…</div>
+          <div class="panel-subtitle" id="protocol-name"></div>
+        </div>
+      </header>
+
+      <main>
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Main Board</p>
+              <h2>Current Protocol</h2>
+            </div>
+            <p class="section-note">
+              Only finished 230-sample runs are ranked on the main board.
+            </p>
+          </div>
+          <div class="podium" id="podium"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Leaderboard</p>
+              <h2>Model Rankings</h2>
+            </div>
+            <div class="legend">
+              <span class="legend-pill final">Finished</span>
+            </div>
+          </div>
+
+          <div class="board-card">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Model</th>
+                  <th>Accuracy</th>
+                  <th>Samples</th>
+                  <th>Tool Rate</th>
+                  <th>Direct Acc</th>
+                  <th>Z3 Acc</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section two-col">
+          <div class="board-card">
+            <div class="card-head">
+              <p class="section-kicker">Benchmarks</p>
+              <h3>Coverage Roadmap</h3>
+            </div>
+            <div id="benchmark-grid" class="progress-grid"></div>
+          </div>
+
+          <div class="board-card">
+            <div class="card-head">
+              <p class="section-kicker">Protocol</p>
+              <h3>Evaluation Rules</h3>
+            </div>
+            <ul class="protocol-list" id="protocol-list"></ul>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
