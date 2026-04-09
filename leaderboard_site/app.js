@@ -3,15 +3,12 @@ const dataUrl = "./data/leaderboard.json";
 const fmtPct = (x) => `${(x * 100).toFixed(2)}%`;
 
 function rankModels(models) {
-  const isFinal = (m) => m.status === "final";
   const cmp = (a, b) => {
     if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
     if (b.sampleCount !== a.sampleCount) return b.sampleCount - a.sampleCount;
     return a.name.localeCompare(b.name);
   };
-  const finals = models.filter(isFinal).sort(cmp);
-  const inFlight = models.filter((m) => !isFinal(m)).sort(cmp);
-  return [...finals, ...inFlight];
+  return [...models].sort(cmp);
 }
 
 function renderMeta(meta) {
