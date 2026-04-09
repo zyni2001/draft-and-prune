@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Formal Reasoner Arena</title>
+    <title>Logic Reasoner Arena</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,12 +17,13 @@
       <header class="hero">
         <div class="hero-copy">
           <p class="eyebrow">First-Order Logic Reasoning Leaderboard</p>
-          <h1>Formal Reasoner Arena</h1>
+          <h1>Logic Reasoner Arena</h1>
           <p class="hero-text">
             A live leaderboard for first-order-logic reasoning agents across
-            formal reasoning benchmarks. Models may answer directly or invoke
-            first-order-logic solvers, and current scores report accuracy under
-            a unified zero-shot adaptive-agent protocol.
+            formal reasoning benchmarks. Under a unified zero-shot
+            adaptive-agent protocol, models may answer directly, invoke
+            first-order-logic solvers over multiple turns, and fall back to
+            direct reasoning when tool calls fail.
           </p>
           <div class="meta-pills" id="meta-pills"></div>
         </div>

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Formal Reasoner Arena",
+    "title": "Logic Reasoner Arena",
     "updatedAt": "2026-04-09",
     "defaultTrack": "proverqa-hard",
     "protocol": "zero-shot adaptive-agent",
