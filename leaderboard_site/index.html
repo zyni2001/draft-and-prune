@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logic Reasoner Arena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">First-Order Logic Reasoning Leaderboard</p>
+          <h1>Logic Reasoner Arena</h1>
+          <p class="hero-text">
+            A live leaderboard for first-order-logic reasoning agents across
+            formal reasoning benchmarks. Under a unified zero-shot
+            adaptive-agent protocol, models may answer directly, invoke
+            first-order-logic solvers over multiple turns, and fall back to
+            direct reasoning when tool calls fail.
+          </p>
+          <div class="meta-pills" id="meta-pills"></div>
+        </div>
+        <div class="hero-panel">
+          <div class="panel-label">Current Track</div>
+          <div class="panel-value" id="updated-at">Loading…</div>
+          <div class="panel-subtitle" id="protocol-name"></div>
+          <div class="panel-subtitle" id="track-stats"></div>
+        </div>
+      </header>
+
+      <main>
+        <section class="section">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Leaderboard</p>
+              <h2>Model Rankings</h2>
+            </div>
+            <div class="table-tools">
+              <div class="benchmark-switcher" id="benchmark-switcher"></div>
+              <div class="legend">
+                <span class="legend-pill final">Finished</span>
+                <span class="legend-pill live">In progress</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="board-card">
+            <table class="leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Model</th>
+                  <th>Accuracy</th>
+                  <th>Samples</th>
+                  <th>Tool Rate</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
