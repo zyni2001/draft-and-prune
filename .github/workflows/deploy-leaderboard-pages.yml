@@ -3,6 +3,8 @@ name: Deploy Leaderboard to GitHub Pages
 on:
   push:
     branches:
+      - clean
+      - leaderboard-site
       - main
       - master
     paths:
