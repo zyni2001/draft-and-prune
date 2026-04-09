@@ -66,6 +66,19 @@
         "toolRate": 0.6217,
         "runPath": "results/results_2026-04-09/adaptive-agent-AR-LSAT-model-gpt-5.4-zero_shot-9f8aaf8b-3359-40ad-aa1d-9d046ac773c6",
         "note": "Finished full run. Strong when it routes into Z3, less accurate on direct-only samples."
+      },
+      {
+        "id": "claude-sonnet-4-6",
+        "name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.2652,
+        "sampleCount": 230,
+        "totalSamples": 230,
+        "toolRate": 0.9739,
+        "runPath": "results/results_2026-04-09/adaptive-agent-AR-LSAT-model-claude-sonnet-4-6-zero_shot-9e2be70a-b000-4d49-a540-035bd748c8ea",
+        "note": "Full run; leaderboard accuracy uses postprocess_leaderboard postprocessed_accuracy (+3 vs original extractor). Very high Z3 usage with weaker final alignment on this protocol."
       }
     ],
     "proverqa-hard": [
@@ -81,6 +94,19 @@
         "toolRate": 1.0,
         "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-gemini-3-flash-preview-zero_shot-daa298ca-1a84-4fd6-ae43-06978625ab10",
         "note": "Finished full run on the ProverQA hard split."
+      },
+      {
+        "id": "gemini-3.1-pro-preview-proverqa-hard",
+        "name": "Gemini 3.1 Pro Preview",
+        "provider": "Google",
+        "status": "final",
+        "statusLabel": "Finished",
+        "accuracy": 0.814,
+        "sampleCount": 500,
+        "totalSamples": 500,
+        "toolRate": 0.1,
+        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-gemini-3.1-pro-preview-zero_shot-9aa60b0d-a2a9-490e-b965-554e94f95399",
+        "note": "Full 500 merged: primary run (9aa60b0d) plus resume run 01059c9c-0a14-4718-abfb-bb434c44424d for remaining ids (same protocol). Accuracy = fraction of summaries with success=true; toolRate = z3_called on at least one path."
       },
       {
         "id": "gpt-5.4-nano-proverqa-hard",
@@ -107,6 +133,45 @@
         "toolRate": 0.11,
         "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-gpt-5.4-zero_shot-bad2f8eb-f9c7-4544-b723-4480c20c236d",
         "note": "Finished full run on the ProverQA hard split."
+      },
+      {
+        "id": "minimax-m25-proverqa-inflight",
+        "name": "MiniMax M2.5",
+        "provider": "MiniMax",
+        "status": "live",
+        "statusLabel": "In progress",
+        "accuracy": 0.7342,
+        "sampleCount": 158,
+        "totalSamples": 500,
+        "toolRate": 0.2025,
+        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-MiniMax-M2.5-zero_shot-727c7546-9600-48ed-a50f-ecca3ce68213",
+        "note": "Live job (main.py minimax_m25_proverqa_hard). Accuracy/toolRate on completed summaries only; Samples column is progress."
+      },
+      {
+        "id": "claude-sonnet-4-6-proverqa-inflight",
+        "name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "status": "live",
+        "statusLabel": "In progress",
+        "accuracy": 0.6839,
+        "sampleCount": 155,
+        "totalSamples": 500,
+        "toolRate": 1.0,
+        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-claude-sonnet-4-6-zero_shot-87993032-a689-45bf-a17a-91d526f0f7a0",
+        "note": "Live job (anthropic ProverQA Sonnet 4.6). Interim metrics on saved summaries only."
+      },
+      {
+        "id": "glm-51-proverqa-inflight",
+        "name": "GLM-5.1",
+        "provider": "Zhipu",
+        "status": "live",
+        "statusLabel": "In progress",
+        "accuracy": 0.5,
+        "sampleCount": 10,
+        "totalSamples": 500,
+        "toolRate": 0.1,
+        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-glm-5.1-zero_shot-1976e4e2-3008-4107-a9b1-b025260714b7",
+        "note": "Live job (openai-compatible glm51_proverqa_hard). Early partial; refresh leaderboard JSON after more summaries land."
       }
     ]
   }
