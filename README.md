@@ -2,11 +2,13 @@
 
 A neuro-symbolic tool that combines LLMs with symbolic solvers for logical reasoning using multi-path ensemble with sketched planning, code generation, and path pruning.
 
-Paper: [Draft-and-Prune: Improving the Reliability of Auto-formalization for Logical Reasoning](https://arxiv.org/abs/2603.17233)
+Paper (Arxiv): [Draft-and-Prune: Improving the Reliability of Auto-formalization for Logical Reasoning](https://arxiv.org/abs/2603.17233)
 
-**Related: [Agentified Assessment of Logical Reasoning Agents](https://arxiv.org/abs/2603.02788):** an **assessor agent** runs the benchmark loop (tasks, budgets, parsing, failure logs) so evaluation stays **reproducible** when symbolic runs fail; the system under test only needs a standard **A2A** interface.
+Related work (ICLR 2026: Agents in the wild workshop): [Agentified Assessment of Logical Reasoning Agents](https://arxiv.org/abs/2603.02788): an assessor agent runs the benchmark loop so evaluation stays reproducible through symbolic failures; the system under test only needs a standard A2A interface.
 
-**Cleaned benchmarks we released:** We also **fixed and republished** two widely used logical-reasoning benchmark — **[FOLIO](https://huggingface.co/datasets/yfxiao/folio-refined)** and **[AR-LSAT](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229)**.
+Cleaned benchmarks we released: We also fixed and republished two widely used logical-reasoning benchmark — **[FOLIO](https://huggingface.co/datasets/yfxiao/folio-refined)** and **[AR-LSAT](https://huggingface.co/datasets/anonymous-ar-lsat/ar-lsat-fixed-229)**.
+
+Leaderboard: A live leaderboard for comparing frontier models on formal logical reasoning benchmarks such as AR-LSAT and ProverQA Hard under a unified zero-shot adaptive-agent protocol.: https://zyni2001.github.io/draft-and-prune/
 
 ## Results preview (AR-LSAT)
 
