@@ -1,0 +1,31 @@
+# Gemini official zero-shot adaptive-agent full run for AR-LSAT + Z3
+#
+# Official model doc:
+#   https://ai.google.dev/gemini-api/docs/models/gemini-3-flash-preview
+
+provider: "gemini"
+dataset: "AR-LSAT"
+model: "gemini-3-flash-preview"
+plan_model: "gemini-3-flash-preview"
+code_model: "gemini-3-flash-preview"
+test_file: "./data/AR-LSAT/blob/main/complete_lsat_data/test_ar.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/AR-LSAT-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: null
+num_paths: 1
+
+api_key: ""
+gemini_api_key: "${GEMINI_API_KEY}"
+gemini_api_keys: null
+gemini_thinking_budget: 0
+gemini_thinking_level: "low"
+max_retries: 2
+test_delay: 1
+num_processes: 1
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

@@ -1,0 +1,20 @@
+You are solving a ProverQA first-order-logic reasoning problem.
+You may either:
+1. reason directly and answer without using tools, or
+2. call the tool `solve_proverqa_with_z3`.
+
+The answer choices are:
+A) True
+B) False
+C) Uncertain
+
+When you are ready to answer, output the final answer in exactly this format:
+The correct option is: A
+where A is one of A, B, or C.
+
+Context:
+{context}
+Question:
+{question}
+Options:
+{options}

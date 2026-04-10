@@ -1,0 +1,28 @@
+# Anthropic official zero-shot adaptive-agent smoke test for AR-LSAT + Z3
+
+provider: "anthropic"
+dataset: "AR-LSAT"
+model: "claude-sonnet-4-20250514"
+plan_model: "claude-sonnet-4-20250514"
+code_model: "claude-sonnet-4-20250514"
+test_file: "./data/AR-LSAT/blob/main/complete_lsat_data/test_ar.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/AR-LSAT-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: [0]
+num_paths: 1
+
+api_key: ""
+anthropic_api_key: "${ANTHROPIC_API_KEY}"
+anthropic_base_url: "https://api.anthropic.com/v1"
+anthropic_max_tokens: 512
+openai_compatible_timeout_sec: 30
+max_retries: 2
+test_delay: 1
+num_processes: 1
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

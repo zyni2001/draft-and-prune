@@ -1,0 +1,31 @@
+# Anthropic official zero-shot adaptive-agent full run for ProverQA hard + Z3
+#
+# Official Anthropic docs list the Sonnet 4.6 API ID as:
+#   claude-sonnet-4-6
+
+provider: "anthropic"
+dataset: "ProverQA"
+model: "claude-sonnet-4-6"
+plan_model: "claude-sonnet-4-6"
+code_model: "claude-sonnet-4-6"
+test_file: "./data/ProverQA/hard.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/ProverQA-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: null
+num_paths: 1
+
+api_key: ""
+anthropic_api_key: "${ANTHROPIC_API_KEY}"
+anthropic_base_url: "https://api.anthropic.com/v1"
+anthropic_max_tokens: 8192
+openai_compatible_timeout_sec: 30
+max_retries: 10
+test_delay: 2
+num_processes: 1
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

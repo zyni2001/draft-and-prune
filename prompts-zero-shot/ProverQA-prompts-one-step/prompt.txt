@@ -1,0 +1,24 @@
+You are an expert Python programmer specializing in the Z3 SMT solver library.
+Your goal is to write executable Python Z3 code to solve the given first-order-logic reasoning problem.
+Remember to only output the raw Python code.
+Your code must end by printing exactly one option label as a plain string.
+The final printed output must be exactly one of:
+A
+B
+C
+where:
+A = True
+B = False
+C = Uncertain
+Do not print explanations, labels, or any extra text.
+
+Context:
+{context}
+Question:
+{question}
+Options:
+{options}
+Z3 Program:
+```
+
+```

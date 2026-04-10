@@ -1,0 +1,29 @@
+# Kimi K2.5 zero-shot adaptive-agent smoke test for ProverQA hard + Z3
+
+provider: "openai-compatible"
+dataset: "ProverQA"
+model: "kimi-k2.5"
+plan_model: "kimi-k2.5"
+code_model: "kimi-k2.5"
+test_file: "./data/ProverQA/hard.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/ProverQA-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: [0]
+num_paths: 1
+
+api_key: ""
+openai_compatible_api_key: "${KIMI_API_KEY}"
+openai_compatible_base_url: "https://api.moonshot.ai/v1"
+openai_compatible_timeout_sec: 120
+openai_compatible_default_extra_body: null
+openai_compatible_extra_body: null
+max_retries: 4
+test_delay: 1
+num_processes: 1
+
+plan_temp: 1
+code_temp: 1
+max_repairs: 1
+
+results_root: "./results"

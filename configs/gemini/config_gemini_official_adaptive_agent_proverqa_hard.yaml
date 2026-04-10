@@ -1,0 +1,32 @@
+# Gemini official zero-shot adaptive-agent full run for ProverQA hard + Z3
+
+provider: "gemini"
+dataset: "ProverQA"
+model: "gemini-3-flash-preview"
+plan_model: "gemini-3-flash-preview"
+code_model: "gemini-3-flash-preview"
+test_file: "./data/ProverQA/hard.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/ProverQA-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: null
+num_paths: 1
+
+api_key: ""
+gemini_api_key: "${GEMINI_API_KEY}"
+gemini_api_keys:
+  - "${GEMINI_API_KEY_1}"
+  - "${GEMINI_API_KEY_2}"
+  - "${GEMINI_API_KEY_3}"
+  - "${GEMINI_API_KEY_4}"
+gemini_thinking_budget: 0
+gemini_thinking_level: "low"
+max_retries: 10
+test_delay: 1
+num_processes: 5
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

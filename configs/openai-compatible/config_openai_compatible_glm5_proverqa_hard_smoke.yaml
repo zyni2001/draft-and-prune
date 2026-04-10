@@ -1,0 +1,30 @@
+# GLM-5 zero-shot adaptive-agent smoke test for ProverQA hard
+
+provider: "openai-compatible"
+dataset: "ProverQA"
+model: "glm-5"
+plan_model: "glm-5"
+code_model: "glm-5"
+test_file: "./data/ProverQA/hard.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/ProverQA-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: [0]
+num_paths: 1
+
+api_key: ""
+openai_compatible_api_key: "${GLM_API_KEY}"
+openai_compatible_base_url: "https://open.bigmodel.cn/api/paas/v4"
+openai_compatible_timeout_sec: 120
+openai_compatible_max_tokens: 8192
+openai_compatible_default_extra_body: null
+openai_compatible_extra_body: null
+max_retries: 4
+test_delay: 1
+num_processes: 1
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

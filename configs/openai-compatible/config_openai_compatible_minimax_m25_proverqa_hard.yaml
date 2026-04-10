@@ -1,0 +1,29 @@
+# MiniMax M2.5 zero-shot adaptive-agent full run for ProverQA hard + Z3
+
+provider: "openai-compatible"
+dataset: "ProverQA"
+model: "MiniMax-M2.5"
+plan_model: "MiniMax-M2.5"
+code_model: "MiniMax-M2.5"
+test_file: "./data/ProverQA/hard.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/ProverQA-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: null
+num_paths: 1
+
+api_key: ""
+openai_compatible_api_key: "${MINIMAX_API_KEY}"
+openai_compatible_base_url: "https://api.minimax.io/v1"
+openai_compatible_timeout_sec: 120
+openai_compatible_default_extra_body: null
+openai_compatible_extra_body: null
+max_retries: 10
+test_delay: 2
+num_processes: 5
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"

@@ -1,0 +1,18 @@
+You are an expert Python programmer specializing in the Z3 SMT solver library.
+Your goal is to write executable Python Z3 code to solve the given problem.
+Remember to only output the raw Python code.
+Your code must end by printing a Python list containing exactly one answer index.
+The final printed output must have this exact shape: [i]
+where i is a single integer in {0, 1, 2, 3, 4}.
+Do not print explanations, labels, or any extra text.
+
+Context:
+{context}
+Question:
+{question}
+Choices:
+{answers}
+Z3 Program:
+```
+
+```

@@ -1,0 +1,14 @@
+You are an expert Python syntax fixer specializing in the Z3 SMT solver library.
+Your task is to fix the syntax errors in the code below given the error message from Z3 solver.
+Produce ONLY raw Python code. Do not include any other comments or explanations.
+
+Code with Syntax Errors:
+{code}
+Error message from solver:
+{syntax_error}
+
+Fixed Code:
+```
+from z3 import *
+
+```

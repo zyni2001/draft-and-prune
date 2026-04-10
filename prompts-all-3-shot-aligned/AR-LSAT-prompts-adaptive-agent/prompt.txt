@@ -1,0 +1,15 @@
+You are solving an AR-LSAT multiple-choice reasoning problem.
+You may either:
+1. reason directly and answer without using tools, or
+2. call the tool `solve_ar_lsat_with_z3`.
+
+When you are ready to answer, output the final answer in exactly this format:
+The correct option is: [i]
+where i is one of 0, 1, 2, 3, 4.
+
+Context:
+{context}
+Question:
+{question}
+Choices:
+{answers}

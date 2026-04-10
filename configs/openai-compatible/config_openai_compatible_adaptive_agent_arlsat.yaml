@@ -1,0 +1,29 @@
+# OpenAI-compatible adaptive-agent config for AR-LSAT + Z3
+# Designed for providers such as SiliconFlow that expose an OpenAI-compatible chat API.
+
+provider: "openai-compatible"
+dataset: "AR-LSAT"
+model: "deepseek-ai/DeepSeek-V3" # SiliconFlow function-calling capable default
+plan_model: "deepseek-ai/DeepSeek-V3"
+code_model: "deepseek-ai/DeepSeek-V3"
+test_file: "./data/AR-LSAT/blob/main/complete_lsat_data/test_ar.json"
+prompt_path: "./prompts-all-3-shot-aligned/AR-LSAT-prompts-adaptive-agent"
+reasoning_method: "adaptive-agent"
+shots: "three"
+desired_indices: [0]
+num_paths: 1
+
+api_key: ""
+openai_compatible_api_key: "${SILICONFLOW_API_KEY}"
+openai_compatible_base_url: "https://api.siliconflow.cn/v1"
+openai_compatible_default_extra_body: null
+openai_compatible_extra_body: null
+max_retries: 2
+test_delay: 1
+num_processes: 1
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 3
+
+results_root: "./results"

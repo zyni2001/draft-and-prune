@@ -1,0 +1,30 @@
+# OpenAI official zero-shot adaptive-agent full-run config for AR-LSAT + Z3
+# Uses the OpenAI-compatible path against the official OpenAI API endpoint.
+
+provider: "openai-compatible"
+dataset: "AR-LSAT"
+model: "gpt-5.4-nano"
+plan_model: "gpt-5.4-nano"
+code_model: "gpt-5.4-nano"
+test_file: "./data/AR-LSAT/blob/main/complete_lsat_data/test_ar.json"
+reasoning_method: "adaptive-agent"
+prompt_path: "./prompts-zero-shot/AR-LSAT-prompts-adaptive-agent"
+shots: "zero"
+desired_indices: null
+num_paths: 1
+
+api_key: ""
+openai_compatible_api_key: "${OPENAI_API_KEY}"
+openai_compatible_base_url: "https://api.openai.com/v1"
+openai_compatible_timeout_sec: 30
+openai_compatible_default_extra_body: null
+openai_compatible_extra_body: null
+max_retries: 2
+test_delay: 1
+num_processes: 5
+
+plan_temp: 0
+code_temp: 0
+max_repairs: 1
+
+results_root: "./results"
