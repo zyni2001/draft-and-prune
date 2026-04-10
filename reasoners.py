@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import re
 import json
 import time
@@ -97,6 +98,7 @@ class DatasetConfig:
         'ar-lsat': 'z3',
         'proofwriter': 'pyke', 
         'folio': 'prover9',
+        'proverqa': 'z3',
         'prontoqa': 'pyke',
         'logicaldeduction': 'pythonconstraint'
     }
@@ -133,7 +135,7 @@ class PromptHandler:
         # Dataset-specific replacements
         if self.dataset == "ar-lsat" and 'answers' in test_case:
             prompt = prompt.replace("{answers}", str(test_case["answers"]))
-        elif self.dataset in ["proofwriter", "folio", "prontoqa"] and 'options' in test_case:
+        elif self.dataset in ["proofwriter", "folio", "proverqa", "prontoqa"] and 'options' in test_case:
             prompt = prompt.replace("{options}", str(test_case["options"]))
         elif self.dataset == 'logicaldeduction':
             if 'options' in test_case:
@@ -166,6 +168,11 @@ class PromptHandler:
         """Generate Chain-of-Thought prompt"""
         template = self._load_template("prompt.txt")
         return self._format_prompt(template, test_case)
+
+    def get_agent_prompt(self, test_case: Dict) -> str:
+        """Generate adaptive-agent prompt."""
+        template = self._load_template("prompt.txt")
+        return self._format_prompt(template, test_case)
     
     def get_fix_syntax_error_prompt(self, test_case: Dict, code: str, syntax_error: str) -> str:
         """Generate syntax error fix prompt"""
@@ -195,7 +202,7 @@ class CodeExecutor:
         try:
             env = os.environ.copy()
             env["PYTHONIOENCODING"] = "utf-8"
-            result = subprocess.run(['python3', tmp_filename],
+            result = subprocess.run([sys.executable, tmp_filename],
                                    capture_output=True, text=True, timeout=timeout,
                                    env=env)
             os.unlink(tmp_filename)
@@ -297,22 +304,21 @@ class CodeCleaner:
         """Clean the code from the model output which have '```python' or '```' fences"""
         dataset = dataset.lower()
         
-        if dataset in ['ar-lsat', 'logicaldeduction']:
-            # Clean potential markdown fences
-            cleaned_code = code_text
-            if "```python" in cleaned_code:
-                match = re.search(r"```python\n(.*?)```", cleaned_code, re.DOTALL)
-                if match:
-                    cleaned_code = match.group(1).strip()
-            elif cleaned_code.strip().startswith("```") and cleaned_code.strip().endswith("```"):
-                # Remove opening fence (``` optionally followed by language identifier and newline)
-                cleaned_code = re.sub(r"^```[a-zA-Z]*\n?", "", cleaned_code.strip(), count=1)
-                # Remove closing fence (``` optionally followed by language identifier and newline)
-                cleaned_code = re.sub(r"\n?```$", "", cleaned_code.strip(), count=1)
-                # Remove any remaining whitespace
-                cleaned_code = cleaned_code.strip()
+        if dataset in ['ar-lsat', 'logicaldeduction', 'proverqa']:
+            cleaned_code = code_text.strip()
 
-            return cleaned_code
+            # Prefer extracting the first fenced code block when both fences exist.
+            fenced_match = re.search(r"```(?:[a-zA-Z0-9_+-]+)?\s*\n(.*?)\n?```", cleaned_code, re.DOTALL)
+            if fenced_match:
+                return fenced_match.group(1).strip()
+
+            # If the model emitted only a leading fence, strip it anyway.
+            cleaned_code = re.sub(r"^\s*```(?:[a-zA-Z0-9_+-]+)?\s*\n?", "", cleaned_code, count=1)
+
+            # If the model emitted only a trailing fence, strip it as well.
+            cleaned_code = re.sub(r"\n?\s*```\s*$", "", cleaned_code, count=1)
+
+            return cleaned_code.strip()
         
         elif dataset == 'proofwriter':
             return code_text
@@ -380,7 +386,7 @@ class Reasoner(ABC):
         self.api_client = None
         self.code_api_client = None
 
-        if self.config.reasoning_method in ("cot", "one-step"):
+        if self.config.reasoning_method in ("cot", "one-step", "adaptive-agent"):
             model = getattr(self.config, "model", None)
             api_config = APIConfig(
                 model_name=model,
@@ -388,6 +394,8 @@ class Reasoner(ABC):
                 gemini_thinking_budget=getattr(self.config, "gemini_thinking_budget", 0),
                 gemini_thinking_level=getattr(self.config, "gemini_thinking_level", None),
                 openai_compatible_extra_body=self._get_openai_compatible_extra_body(model),
+                openai_compatible_timeout_sec=getattr(self.config, "openai_compatible_timeout_sec", 60),
+                openai_compatible_max_tokens=getattr(self.config, "openai_compatible_max_tokens", None),
                 max_retries=self.config.max_retries,
                 inter_test_case_delay=self.config.test_delay
             )
@@ -405,6 +413,8 @@ class Reasoner(ABC):
                 gemini_thinking_budget=getattr(self.config, "gemini_thinking_budget", 0),
                 gemini_thinking_level=getattr(self.config, "gemini_thinking_level", None),
                 openai_compatible_extra_body=self._get_openai_compatible_extra_body(plan_model),
+                openai_compatible_timeout_sec=getattr(self.config, "openai_compatible_timeout_sec", 60),
+                openai_compatible_max_tokens=getattr(self.config, "openai_compatible_max_tokens", None),
                 max_retries=self.config.max_retries,
                 inter_test_case_delay=self.config.test_delay
             )
@@ -420,6 +430,8 @@ class Reasoner(ABC):
                 gemini_thinking_budget=getattr(self.config, "gemini_thinking_budget", 0),
                 gemini_thinking_level=getattr(self.config, "gemini_thinking_level", None),
                 openai_compatible_extra_body=self._get_openai_compatible_extra_body(code_model),
+                openai_compatible_timeout_sec=getattr(self.config, "openai_compatible_timeout_sec", 60),
+                openai_compatible_max_tokens=getattr(self.config, "openai_compatible_max_tokens", None),
                 max_retries=self.config.max_retries,
                 inter_test_case_delay=self.config.test_delay
             )
@@ -557,17 +569,34 @@ class Reasoner(ABC):
 
     def create_results_folder(self) -> None:
         """Create results folder based on model name"""
-        plan_model_name = getattr(self.config, 'plan_model', None)
-        if plan_model_name is None:
-            raise ValueError("plan_model is not set")
-        code_model_name = getattr(self.config, 'code_model', None)
-        if code_model_name is None:
-            raise ValueError("code_model is not set")
         results_root = getattr(self.config, "results_root", "./results")
+        if self.config.reasoning_method in ("cot", "one-step", "adaptive-agent"):
+            model_name = getattr(self.config, "model", None)
+            if model_name is None:
+                raise ValueError("model is not set")
+            safe_model_name = self._sanitize_name_for_path(model_name)
+            folder_name = (
+                f"{self.config.reasoning_method}-{self.config.dataset}-model-{safe_model_name}-"
+                f"{self.config.shots}_shot-{str(uuid.uuid4())}"
+            )
+        else:
+            plan_model_name = getattr(self.config, 'plan_model', None)
+            if plan_model_name is None:
+                raise ValueError("plan_model is not set")
+            code_model_name = getattr(self.config, 'code_model', None)
+            if code_model_name is None:
+                raise ValueError("code_model is not set")
+            safe_plan_model_name = self._sanitize_name_for_path(plan_model_name)
+            safe_code_model_name = self._sanitize_name_for_path(code_model_name)
+            folder_name = (
+                f"{self.config.reasoning_method}-{self.config.dataset}-plan-with-{safe_plan_model_name}-"
+                f"code-with-{safe_code_model_name}-{self.config.shots}_shot_CoT-{str(uuid.uuid4())}"
+            )
+
         self.results_folder = os.path.join(
             results_root,
             f"results_{datetime.now().strftime('%Y-%m-%d')}",
-            f"{self.config.reasoning_method}-{self.config.dataset}-plan-with-{plan_model_name}-code-with-{code_model_name}-{self.config.shots}_shot_CoT-{str(uuid.uuid4())}"
+            folder_name
         )
         print(f"Results folder: {self.results_folder}")
         
@@ -585,6 +614,17 @@ class Reasoner(ABC):
     def _call_fix_api(self, prompt: str) -> str:
         """Common method to call the API using the modular client"""
         return self.code_api_client.call(prompt)
+
+    def _call_api_with_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Call a chat endpoint with structured messages and optional tools."""
+        if not hasattr(self.api_client, "call_with_messages"):
+            raise ValueError("The configured API client does not support structured message/tool calls.")
+        return self.api_client.call_with_messages(messages, tools=tools, tool_choice=tool_choice)
     
     def interpret_results(self, response_text: str) -> Tuple[bool, str, Optional[str]]:
         """Interpret the results from the reasoning"""
@@ -593,6 +633,11 @@ class Reasoner(ABC):
     def _process_results(self, test_case: Dict, reasoning_result: Dict, case_time: float, unique_id: str="", timing_data: Optional[Dict] = None) -> None:
         """Process the results of a single test case"""
         pass
+
+    @staticmethod
+    def _sanitize_name_for_path(name: str) -> str:
+        """Convert names into filesystem-safe path segments."""
+        return re.sub(r"[^A-Za-z0-9._-]+", "_", name)
 
     @staticmethod
     def _zero_token_usage() -> Dict[str, int]:
@@ -862,11 +907,14 @@ class CodeBasedReasoner(Reasoner):
         return None
     
     def _execute_with_repair(self, test_case: dict, code: str, execute_func: Callable,
-                           mp_lock: Optional[Any], identifier: str) -> Tuple[str, str, bool, List[Dict[str, Any]], Optional[str], float]:
+                           mp_lock: Optional[Any], identifier: str,
+                           prompt_handler: Optional[PromptHandler] = None,
+                           repair_client: Optional[APIClient] = None) -> Tuple[str, str, bool, List[Dict[str, Any]], Optional[str], float]:
         """Execute code with repair attempts"""
         temp_code = code
         repair_round_logs: List[Dict[str, Any]] = []
         solver_time_only_total = self._zero_solver_time()
+        active_prompt_handler = prompt_handler or self.prompt_handler
 
         print(f"Starting syntax error iteration 1/{self.config.max_repairs} for {identifier}")
         is_valid, temp_solver_output, initial_solver_time_only = self._execute_code(execute_func, temp_code, mp_lock)
@@ -879,9 +927,13 @@ class CodeBasedReasoner(Reasoner):
                 break
 
             print(f"Code execution failed for {identifier}. Error: {temp_solver_output}")
-            fix_prompt = self.prompt_handler.get_fix_syntax_error_prompt(test_case, temp_code, temp_solver_output)
+            fix_prompt = active_prompt_handler.get_fix_syntax_error_prompt(test_case, temp_code, temp_solver_output)
 
-            if hasattr(self, 'code_api_client'):
+            if repair_client is not None:
+                fix_response = repair_client.call(fix_prompt)
+                usage = self._extract_usage(repair_client)
+                api_time_only = self._extract_api_time(repair_client)
+            elif hasattr(self, 'code_api_client'):
                 fix_response = self._call_fix_api(fix_prompt)
                 usage = self._extract_usage(self.code_api_client)
                 api_time_only = self._extract_api_time(self.code_api_client)
@@ -1265,7 +1317,7 @@ class CoTReasoner(Reasoner):
             if self.config.dataset.lower() == "ar-lsat":
                 is_correct, extracted_answer_index, error_type = self.answer_extractor.extract_answer(
                     reasoning_output_for_extraction, test_case["label"], self.config.reasoning_method)
-            elif self.config.dataset.lower() in ["proofwriter", "folio", "prontoqa", "logicaldeduction"]:
+            elif self.config.dataset.lower() in ["proofwriter", "folio", "proverqa", "prontoqa", "logicaldeduction"]:
                 is_correct, extracted_answer_index, error_type = self.answer_extractor.extract_answer(
                     reasoning_output_for_extraction, test_case["answer"], self.config.reasoning_method)
             else:
@@ -1315,4 +1367,640 @@ class CoTReasoner(Reasoner):
         
         summary_filepath = os.path.join(self.summary_folder, f"{problem_name}-{unique_id}.json")
         with open(summary_filepath, "w") as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+
+
+class AdaptiveAgentReasoner(CodeBasedReasoner):
+    """Adaptive reasoning that lets the model decide whether to call Z3."""
+
+    MAX_AGENT_STEPS = 6
+    MAX_Z3_TOOL_CALLS = 3
+
+    DATASET_SETTINGS = {
+        "ar-lsat": {
+            "tool_prompt_dir": "AR-LSAT-prompts-one-step",
+            "tool_name": "solve_ar_lsat_with_z3",
+            "choices_key": "answers",
+            "expected_choice_count": 5,
+            "tool_description": (
+                "Use symbolic reasoning with Z3 to solve the AR-LSAT problem. "
+                "Call this when the constraints are easier to verify formally than by direct reasoning."
+            ),
+            "context_description": "The full AR-LSAT problem context.",
+            "question_description": "The AR-LSAT question to answer.",
+        },
+        "proverqa": {
+            "tool_prompt_dir": "ProverQA-prompts-one-step",
+            "tool_name": "solve_proverqa_with_z3",
+            "choices_key": "options",
+            "expected_choice_count": 3,
+            "tool_description": (
+                "Use symbolic reasoning with Z3 to solve the ProverQA problem. "
+                "Call this when the first-order-logic structure is easier to verify formally than by direct reasoning."
+            ),
+            "context_description": "The full ProverQA context.",
+            "question_description": "The ProverQA statement to classify as true, false, or uncertain.",
+        },
+    }
+
+    def __init__(self, config: ReasonerConfig, data_loader: DataLoader, answer_extractor: AnswerExtractor):
+        super().__init__(config, data_loader, answer_extractor)
+        self.dataset_key = self.config.dataset.lower()
+        if self.dataset_key not in self.DATASET_SETTINGS:
+            supported = ", ".join(sorted(self.DATASET_SETTINGS))
+            raise ValueError(f"AdaptiveAgentReasoner currently supports: {supported}.")
+        if not callable(getattr(self.api_client, "call_with_messages", None)):
+            raise ValueError("AdaptiveAgentReasoner requires an API client with structured message/tool support.")
+
+        self.dataset_settings = self.DATASET_SETTINGS[self.dataset_key]
+        prompt_root = os.path.dirname(os.path.abspath(self.config.prompt_path))
+        one_step_prompt_path = os.path.join(prompt_root, self.dataset_settings["tool_prompt_dir"])
+        if not os.path.exists(one_step_prompt_path):
+            raise ValueError(
+                f"Adaptive-agent tool prompt path not found: {one_step_prompt_path}. "
+                f"Expected a sibling {self.dataset_settings['tool_prompt_dir']} directory next to config.prompt_path."
+            )
+        self.tool_prompt_handler = PromptHandler(one_step_prompt_path, self.config.dataset)
+
+    def _generate_and_execute_code(self, test_case: dict, solver_name: str, execute_func: Callable, mp_lock: Optional[Any] = None) -> dict:
+        """Adaptive-agent does not use the inherited code-generation path."""
+        raise NotImplementedError("AdaptiveAgentReasoner uses its own agent/tool loop instead of _generate_and_execute_code.")
+
+    def _build_z3_tool_schema(self) -> List[Dict[str, Any]]:
+        """Tool schema exposed to the model."""
+        choice_key = self.dataset_settings["choices_key"]
+        expected_choice_count = self.dataset_settings["expected_choice_count"]
+        return [{
+            "type": "function",
+            "function": {
+                "name": self.dataset_settings["tool_name"],
+                "description": self.dataset_settings["tool_description"],
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "context": {
+                            "type": "string",
+                            "description": self.dataset_settings["context_description"],
+                        },
+                        "question": {
+                            "type": "string",
+                            "description": self.dataset_settings["question_description"],
+                        },
+                        choice_key: {
+                            "type": "array",
+                            "description": f"The answer choices in order. Expected exactly {expected_choice_count} choices.",
+                            "items": {"type": "string"}
+                        }
+                    },
+                    "required": ["context", "question", choice_key]
+                }
+            }
+        }]
+
+    @staticmethod
+    def _extract_single_answer_index(answer_text: Optional[str]) -> Optional[str]:
+        """Extract a single AR-LSAT answer index like [2] from text."""
+        if not isinstance(answer_text, str):
+            return None
+        match = re.search(r"\[\s*([0-4])\s*\]", answer_text)
+        if match:
+            return f"[{match.group(1)}]"
+        normalized = answer_text.strip()
+        choice_match = re.search(
+            r"\b(?:choice|option)\s+([1-5])\s+(?:is\s+possible|could\s+be|is\s+correct|is\s+the\s+answer)\b",
+            normalized,
+            re.IGNORECASE,
+        )
+        if choice_match:
+            return f"[{int(choice_match.group(1)) - 1}]"
+        return None
+
+    @staticmethod
+    def _extract_single_option_letter(answer_text: Optional[str]) -> Optional[str]:
+        """Extract a ProverQA answer label like A/B/C from text."""
+        if not isinstance(answer_text, str):
+            return None
+
+        letter_match = re.search(r"\b(?:the correct option is:\s*)?([ABC])\b", answer_text.strip(), re.IGNORECASE)
+        if letter_match:
+            return letter_match.group(1).upper()
+
+        normalized = answer_text.strip().lower()
+        word_map = {
+            "true": "A",
+            "false": "B",
+            "uncertain": "C",
+            "unknown": "C",
+            "a) true": "A",
+            "b) false": "B",
+            "c) uncertain": "C",
+        }
+        return word_map.get(normalized)
+
+    @staticmethod
+    def _normalize_answer_text(text: str) -> str:
+        """Normalize answer text for approximate matching."""
+        return re.sub(r"\s+", " ", text.strip().strip("\"'")).lower()
+
+    @classmethod
+    def _extract_answer_from_solver_output(cls, solver_output: Optional[str], answers: List[str]) -> Optional[str]:
+        """Extract a single AR-LSAT answer index from flexible solver outputs."""
+        parsed_answer = cls._extract_single_answer_index(solver_output)
+        if parsed_answer:
+            return parsed_answer
+        if not isinstance(solver_output, str):
+            return None
+
+        normalized_output = cls._normalize_answer_text(solver_output)
+        normalized_answers = [cls._normalize_answer_text(answer) for answer in answers]
+
+        # Direct exact match to one answer choice.
+        exact_matches = [idx for idx, answer in enumerate(normalized_answers) if answer == normalized_output]
+        if len(exact_matches) == 1:
+            return f"[{exact_matches[0]}]"
+
+        # Single-choice substring match against the whole solver output.
+        whole_matches = [idx for idx, answer in enumerate(normalized_answers) if answer and answer in normalized_output]
+        if len(whole_matches) == 1:
+            return f"[{whole_matches[0]}]"
+
+        # Also allow a short solver output that is a unique substring of one answer choice.
+        reverse_matches = [idx for idx, answer in enumerate(normalized_answers) if normalized_output and normalized_output in answer]
+        if len(reverse_matches) == 1:
+            return f"[{reverse_matches[0]}]"
+
+        positive_markers = (
+            "must be true",
+            "could be true",
+            "could be",
+            "is possible",
+            "possible",
+            "unique",
+            "except",
+            "correct",
+            "answer",
+        )
+        negative_markers = (
+            "cannot be true",
+            "not unique",
+            "not necessarily true",
+            "cannot be",
+            "not possible",
+            "impossible",
+            "incorrect",
+        )
+
+        positive_candidates = []
+        for raw_line in solver_output.splitlines():
+            line = cls._normalize_answer_text(raw_line)
+            if not line:
+                continue
+            if any(marker in line for marker in negative_markers):
+                continue
+            if not any(marker in line for marker in positive_markers):
+                continue
+            line_matches = [idx for idx, answer in enumerate(normalized_answers) if answer and answer in line]
+            if len(line_matches) == 1:
+                positive_candidates.append(line_matches[0])
+
+        unique_candidates = sorted(set(positive_candidates))
+        if len(unique_candidates) == 1:
+            return f"[{unique_candidates[0]}]"
+
+        return None
+
+    @classmethod
+    def _extract_proverqa_answer_from_solver_output(cls, solver_output: Optional[str], options: List[str]) -> Optional[str]:
+        """Extract a ProverQA answer label from flexible solver outputs."""
+        parsed_letter = cls._extract_single_option_letter(solver_output)
+        if parsed_letter:
+            return parsed_letter
+        if not isinstance(solver_output, str):
+            return None
+
+        normalized_output = cls._normalize_answer_text(solver_output)
+        normalized_options = [cls._normalize_answer_text(option) for option in options]
+        option_to_letter = {idx: chr(ord("A") + idx) for idx in range(len(options))}
+
+        word_map = {
+            "true": "A",
+            "false": "B",
+            "uncertain": "C",
+            "unknown": "C",
+        }
+        if normalized_output in word_map:
+            return word_map[normalized_output]
+
+        exact_matches = [idx for idx, option in enumerate(normalized_options) if option == normalized_output]
+        if len(exact_matches) == 1:
+            return option_to_letter[exact_matches[0]]
+
+        whole_matches = [idx for idx, option in enumerate(normalized_options) if option and option in normalized_output]
+        if len(whole_matches) == 1:
+            return option_to_letter[whole_matches[0]]
+
+        reverse_matches = [idx for idx, option in enumerate(normalized_options) if normalized_output and normalized_output in option]
+        if len(reverse_matches) == 1:
+            return option_to_letter[reverse_matches[0]]
+
+        return None
+
+    @staticmethod
+    def _assistant_message_from_response(response: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert a structured response into a conversation message."""
+        message = {
+            "role": response.get("role", "assistant"),
+            "content": response.get("content") or "",
+        }
+        tool_calls = response.get("tool_calls") or []
+        if tool_calls:
+            message["tool_calls"] = tool_calls
+        return message
+
+    @staticmethod
+    def _normalize_tool_arguments(arguments: Any) -> Dict[str, Any]:
+        """Normalize tool-call arguments into a dictionary."""
+        if isinstance(arguments, dict):
+            return arguments
+        if isinstance(arguments, str):
+            return json.loads(arguments)
+        raise ValueError("Tool arguments must be a dict or JSON string.")
+
+    def _run_z3_tool(
+        self,
+        tool_args: Dict[str, Any],
+        mp_lock: Optional[Any],
+        path_idx: int,
+        tool_call_idx: int,
+    ) -> Tuple[Dict[str, Any], str]:
+        """Execute the dataset-specific Z3 tool and return both log data and tool content."""
+        choices_key = self.dataset_settings["choices_key"]
+        expected_choice_count = self.dataset_settings["expected_choice_count"]
+        choices = tool_args.get(choices_key)
+        if isinstance(choices, str):
+            choices = json.loads(choices)
+        if not isinstance(choices, list) or len(choices) != expected_choice_count:
+            raise ValueError(f"{choices_key} must be a list of exactly {expected_choice_count} answer choices.")
+
+        synthetic_test_case = {
+            "context": tool_args["context"],
+            "question": tool_args["question"],
+            choices_key: choices,
+        }
+
+        code_prompt = self.tool_prompt_handler.get_direct_prompt(synthetic_test_case)
+        code_response = self._call_api(code_prompt)
+        code_generation_usage = self._extract_usage(self.api_client)
+        code_generation_api_time_only = self._extract_api_time(self.api_client)
+        generated_code = CodeCleaner.clean_code(code_response, self.config.dataset)
+
+        final_code, solver_output, is_valid, repair_round_logs, solver_error_type, solver_time_only = self._execute_with_repair(
+            synthetic_test_case,
+            generated_code,
+            self.code_executor.execute_z3_code,
+            mp_lock,
+            f"adaptive-agent path={path_idx} tool_call={tool_call_idx}",
+            prompt_handler=self.tool_prompt_handler,
+            repair_client=self.api_client,
+        )
+
+        repair_usage_total = self._sum_token_usages([log.get("usage") for log in repair_round_logs])
+        repair_api_time_only_total = self._sum_api_times([log.get("api_time_only") for log in repair_round_logs])
+        token_usage_total = self._sum_token_usages([code_generation_usage, repair_usage_total])
+        api_time_only_total = self._sum_api_times([code_generation_api_time_only, repair_api_time_only_total])
+        if self.dataset_key == "ar-lsat":
+            parsed_answer = self._extract_answer_from_solver_output(solver_output, choices)
+            answer_text = f"The correct option is: {parsed_answer}" if parsed_answer else None
+        elif self.dataset_key == "proverqa":
+            parsed_answer = self._extract_proverqa_answer_from_solver_output(solver_output, choices)
+            answer_text = f"The correct option is: {parsed_answer}" if parsed_answer else None
+        else:
+            raise ValueError(f"Unsupported adaptive-agent dataset: {self.dataset_key}")
+
+        tool_result_payload = {
+            "status": "ok" if is_valid else "error",
+            "solver_output": solver_output,
+            "parsed_answer": parsed_answer,
+            "answer_text": answer_text,
+            "solver_error_type": solver_error_type,
+        }
+        tool_log = {
+            "tool_name": self.dataset_settings["tool_name"],
+            "tool_call_index": tool_call_idx,
+            "path_idx": path_idx,
+            "arguments": synthetic_test_case,
+            "generated_code": final_code,
+            "raw_generated_code": generated_code,
+            "code_generation_usage": code_generation_usage,
+            "code_generation_api_time_only": code_generation_api_time_only,
+            "repair_usage_total": repair_usage_total,
+            "repair_api_time_only_total": repair_api_time_only_total,
+            "token_usage_total": token_usage_total,
+            "api_time_only_total": api_time_only_total,
+            "solver_time_only": solver_time_only,
+            "repair_round_logs": repair_round_logs,
+            "solver_output": solver_output,
+            "solver_error_type": solver_error_type,
+            "tool_result": tool_result_payload,
+        }
+        return tool_log, json.dumps(tool_result_payload, ensure_ascii=False)
+
+    def _run_single_agent_path(self, test_case: Dict, path_idx: int, mp_lock: Optional[Any]) -> Dict[str, Any]:
+        """Run one adaptive-agent rollout."""
+        messages = [{"role": "user", "content": self.prompt_handler.get_agent_prompt(test_case)}]
+        tools = self._build_z3_tool_schema()
+        force_tool_name = getattr(self.config, "force_tool_name", None)
+        tool_choice: Union[str, Dict[str, Any]] = "auto"
+        if force_tool_name:
+            tool_choice = {
+                "type": "function",
+                "function": {"name": force_tool_name},
+            }
+        active_tools: Optional[List[Dict[str, Any]]] = tools
+        active_tool_choice: Optional[Union[str, Dict[str, Any]]] = tool_choice
+
+        z3_call_count = 0
+        tool_logs: List[Dict[str, Any]] = []
+        agent_step_logs: List[Dict[str, Any]] = []
+        token_usage_total = self._zero_token_usage()
+        api_time_only_total = self._zero_api_time()
+        solver_time_only_total = self._zero_solver_time()
+        final_response = ""
+        last_tool_answer_text = None
+        consecutive_tool_error_count = 0
+        forced_tool_reminder_count = 0
+
+        for step_idx in range(1, self.MAX_AGENT_STEPS + 1):
+            request_kwargs: Dict[str, Any] = {}
+            if active_tools is not None:
+                request_kwargs["tools"] = active_tools
+                if active_tool_choice is not None:
+                    request_kwargs["tool_choice"] = active_tool_choice
+            response = self._call_api_with_messages(messages, **request_kwargs)
+            response_usage = self._extract_usage(self.api_client)
+            response_api_time_only = self._extract_api_time(self.api_client)
+            token_usage_total = self._add_token_usage(token_usage_total, response_usage)
+            api_time_only_total += response_api_time_only
+
+            tool_calls = response.get("tool_calls") or []
+            agent_step_logs.append({
+                "step_idx": step_idx,
+                "response_content": response.get("content"),
+                "tool_calls": tool_calls,
+                "finish_reason": response.get("finish_reason"),
+                "usage": response_usage,
+                "api_time_only": response_api_time_only,
+                "error": response.get("error"),
+            })
+            messages.append(self._assistant_message_from_response(response))
+
+            if tool_calls:
+                step_had_tool_error = False
+                step_had_successful_tool = False
+                for tool_call in tool_calls:
+                    z3_call_count += 1
+                    if z3_call_count > self.MAX_Z3_TOOL_CALLS:
+                        limit_payload = {
+                            "status": "error",
+                            "message": "Maximum z3 tool calls reached. Answer directly using the current information."
+                        }
+                        step_had_tool_error = True
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.get("id"),
+                            "content": json.dumps(limit_payload, ensure_ascii=False),
+                        })
+                        continue
+
+                    try:
+                        tool_args = self._normalize_tool_arguments(tool_call.get("function", {}).get("arguments"))
+                        tool_log, tool_result_content = self._run_z3_tool(tool_args, mp_lock, path_idx, z3_call_count)
+                    except Exception as exc:
+                        tool_log = {
+                            "tool_name": tool_call.get("function", {}).get("name"),
+                            "tool_call_index": z3_call_count,
+                            "path_idx": path_idx,
+                            "arguments": tool_call.get("function", {}).get("arguments"),
+                            "token_usage_total": self._zero_token_usage(),
+                            "api_time_only_total": self._zero_api_time(),
+                            "solver_time_only": self._zero_solver_time(),
+                            "repair_round_logs": [],
+                            "solver_output": str(exc),
+                            "solver_error_type": "tool_argument_error",
+                            "tool_result": {
+                                "status": "error",
+                                "message": str(exc),
+                                "parsed_answer": None,
+                                "answer_text": None,
+                            }
+                        }
+                        tool_result_content = json.dumps(tool_log["tool_result"], ensure_ascii=False)
+
+                    tool_logs.append(tool_log)
+                    token_usage_total = self._add_token_usage(token_usage_total, tool_log.get("token_usage_total"))
+                    api_time_only_total += self._normalize_api_time(tool_log.get("api_time_only_total"))
+                    solver_time_only_total += self._normalize_solver_time(tool_log.get("solver_time_only"))
+                    if tool_log.get("tool_result", {}).get("status") == "ok":
+                        step_had_successful_tool = True
+                    else:
+                        step_had_tool_error = True
+                    tool_answer_text = tool_log.get("tool_result", {}).get("answer_text")
+                    if tool_answer_text:
+                        last_tool_answer_text = tool_answer_text
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.get("id"),
+                        "content": tool_result_content,
+                    })
+
+                if step_had_successful_tool:
+                    consecutive_tool_error_count = 0
+                elif step_had_tool_error:
+                    consecutive_tool_error_count += 1
+
+                if (
+                    consecutive_tool_error_count >= 2
+                    or z3_call_count >= self.MAX_Z3_TOOL_CALLS
+                ) and active_tools is not None:
+                    active_tools = None
+                    active_tool_choice = None
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "The tool has failed repeatedly or the tool-call budget is exhausted. "
+                            "Do not call any tools again. Reason directly from the problem and the "
+                            "previous tool outputs, then give your best final answer in the required format."
+                        ),
+                    })
+                continue
+
+            if force_tool_name and active_tools is not None and z3_call_count == 0 and forced_tool_reminder_count < 2:
+                forced_tool_reminder_count += 1
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        f"You must call the tool `{force_tool_name}` now. "
+                        "Do not answer directly. Return a tool call instead of a natural-language answer."
+                    ),
+                })
+                continue
+
+            final_response = response.get("content") or ""
+            break
+
+        if not final_response:
+            if last_tool_answer_text:
+                final_response = last_tool_answer_text
+            else:
+                final_response = "[ERROR: No final answer generated]"
+
+        final_answer_source = "z3" if z3_call_count > 0 else "direct"
+        return {
+            "path_idx": path_idx,
+            "final_response": final_response,
+            "z3_called": z3_call_count > 0,
+            "z3_call_count": z3_call_count,
+            "final_answer_source": final_answer_source,
+            "tool_logs": tool_logs,
+            "agent_step_logs": agent_step_logs,
+            "path_usage_total": token_usage_total,
+            "path_api_time_only": api_time_only_total,
+            "solver_time_only": solver_time_only_total,
+        }
+
+    def reason(self, test_case: Dict, mp_lock: Optional[Any] = None) -> Dict:
+        """Run adaptive-agent reasoning for one sample."""
+        all_agent_results = []
+        for path_idx in range(1, self.config.num_paths + 1):
+            print(f"\nRunning adaptive-agent path {path_idx}/{self.config.num_paths}...")
+            self.api_client.temperature = self.config.code_temp
+            all_agent_results.append(self._run_single_agent_path(test_case, path_idx, mp_lock))
+        return {"all_agent_results": all_agent_results}
+
+    def _process_results(self, test_case: Dict, reasoning_result: Dict, case_time: float, unique_id: str = "", timing_data: Optional[Dict] = None) -> None:
+        """Save adaptive-agent outputs and tool usage to the results folder."""
+        reasoning_folder = os.path.join(self.results_folder, "reasoning")
+        code_folder = os.path.join(self.results_folder, "code")
+        os.makedirs(reasoning_folder, exist_ok=True)
+        os.makedirs(code_folder, exist_ok=True)
+
+        problem_name = test_case['id_string'] if 'id_string' in test_case else test_case['id']
+        all_agent_results = reasoning_result.get("all_agent_results", [])
+        all_reasoning_outputs = []
+        all_solver_outputs = []
+        path_token_usage = []
+        token_usage_total = self._zero_token_usage()
+        api_time_only_total = self._zero_api_time()
+        solver_time_only_total = self._zero_solver_time()
+        sample_z3_called = False
+        sample_z3_call_count = 0
+        sample_answer_sources = set()
+
+        for agent_result in all_agent_results:
+            path_idx = agent_result["path_idx"]
+            final_response = agent_result.get("final_response", "")
+            reasoning_filepath = os.path.join(reasoning_folder, f"{problem_name}-{unique_id}-agent{path_idx}.txt")
+            with open(reasoning_filepath, "w", encoding="utf-8") as f:
+                f.write(final_response)
+
+            for tool_log in agent_result.get("tool_logs", []):
+                generated_code = tool_log.get("generated_code")
+                if generated_code:
+                    code_filepath = os.path.join(
+                        code_folder,
+                        f"{problem_name}-{unique_id}-agent{path_idx}-z3call{tool_log['tool_call_index']}.py",
+                    )
+                    with open(code_filepath, "w", encoding="utf-8") as f:
+                        f.write(generated_code)
+
+            if final_response == "[ERROR: No final answer generated]":
+                is_correct = False
+                extracted_answer_index = "[]"
+                error_type = "API failure - no final answer generated"
+            elif self.dataset_key == "ar-lsat":
+                is_correct, extracted_answer_index, error_type = self.answer_extractor.extract_answer(
+                    final_response,
+                    test_case["label"],
+                    "cot",
+                )
+            elif self.dataset_key == "proverqa":
+                is_correct, extracted_answer_index, error_type = self.answer_extractor.extract_answer(
+                    final_response,
+                    test_case["answer"],
+                    "cot",
+                )
+            else:
+                raise ValueError(f"Unsupported adaptive-agent dataset: {self.dataset_key}")
+
+            all_solver_outputs.append(extracted_answer_index)
+            all_reasoning_outputs.append({
+                "path_idx": path_idx,
+                "reasoning_output": final_response,
+                "error_type": error_type,
+                "success": is_correct,
+                "z3_called": agent_result.get("z3_called", False),
+                "z3_call_count": agent_result.get("z3_call_count", 0),
+                "final_answer_source": agent_result.get("final_answer_source"),
+                "tool_logs": agent_result.get("tool_logs", []),
+                "agent_step_logs": agent_result.get("agent_step_logs", []),
+                "usage": self._normalize_token_usage(agent_result.get("path_usage_total")),
+                "api_time_only": self._normalize_api_time(agent_result.get("path_api_time_only")),
+                "solver_time_only": self._normalize_solver_time(agent_result.get("solver_time_only")),
+            })
+
+            path_usage_total = self._normalize_token_usage(agent_result.get("path_usage_total"))
+            path_api_time_only = self._normalize_api_time(agent_result.get("path_api_time_only"))
+            path_solver_time_only = self._normalize_solver_time(agent_result.get("solver_time_only"))
+            token_usage_total = self._add_token_usage(token_usage_total, path_usage_total)
+            api_time_only_total += path_api_time_only
+            solver_time_only_total += path_solver_time_only
+            path_token_usage.append({
+                "path_idx": path_idx,
+                "path_usage_total": path_usage_total,
+                "path_api_time_only": path_api_time_only,
+                "solver_time_only": path_solver_time_only,
+                "z3_called": agent_result.get("z3_called", False),
+                "z3_call_count": agent_result.get("z3_call_count", 0),
+                "final_answer_source": agent_result.get("final_answer_source"),
+            })
+
+            sample_z3_called = sample_z3_called or agent_result.get("z3_called", False)
+            sample_z3_call_count += int(agent_result.get("z3_call_count", 0))
+            sample_answer_sources.add(agent_result.get("final_answer_source"))
+
+        if len(sample_answer_sources) == 1:
+            sample_final_answer_source = next(iter(sample_answer_sources))
+        elif len(sample_answer_sources) == 0:
+            sample_final_answer_source = "none"
+        else:
+            sample_final_answer_source = "mixed"
+
+        if len(all_reasoning_outputs) == 1:
+            sample_reasoning_output = all_reasoning_outputs[0].get("reasoning_output")
+            sample_success = all_reasoning_outputs[0].get("success")
+            sample_error_type = all_reasoning_outputs[0].get("error_type")
+        else:
+            sample_reasoning_output = None
+            sample_success = None
+            sample_error_type = None
+
+        results = {
+            "problem": test_case,
+            "timing": case_time,
+            "reasoning_output": sample_reasoning_output,
+            "success": sample_success,
+            "error_type": sample_error_type,
+            "all_reasoning_outputs": all_reasoning_outputs,
+            "all_solver_outputs": all_solver_outputs,
+            "path_token_usage": path_token_usage,
+            "token_usage_total": token_usage_total,
+            "api_time_only_total": api_time_only_total,
+            "solver_time_only_total": solver_time_only_total,
+            "z3_called": sample_z3_called,
+            "z3_call_count": sample_z3_call_count,
+            "final_answer_source": sample_final_answer_source,
+        }
+
+        summary_filepath = os.path.join(self.summary_folder, f"{problem_name}-{unique_id}.json")
+        with open(summary_filepath, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)

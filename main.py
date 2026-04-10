@@ -2,11 +2,12 @@
 # import argparse
 # from datetime import datetime
 from config import ReasonerConfig
-from reasoners import CoTReasoner, TwoStepReasoner, DirectReasoner
+from reasoners import CoTReasoner, TwoStepReasoner, DirectReasoner, AdaptiveAgentReasoner
 from data_loaders import DataLoader, Sampler, JSON_Dataset
 from answer_extractors import (AR_LSAT_AnswerExtractor, 
                                ProofWriter_AnswerExtractor,
                                FOLIO_AnswerExtractor,
+                               ProverQA_AnswerExtractor,
                                ProntoQA_AnswerExtractor,
                                LogicalDeduction_AnswerExtractor)
 import os
@@ -26,6 +27,8 @@ def main():
         answer_extractor = ProofWriter_AnswerExtractor()
     elif config.dataset.lower() == "folio":
         answer_extractor = FOLIO_AnswerExtractor()
+    elif config.dataset.lower() == "proverqa":
+        answer_extractor = ProverQA_AnswerExtractor()
     elif config.dataset.lower() == "prontoqa":
         answer_extractor = ProntoQA_AnswerExtractor()
     elif config.dataset.lower() == "logicaldeduction":
@@ -44,6 +47,8 @@ def main():
         reasoner = DirectReasoner(config, dataloader, answer_extractor)
     elif config.reasoning_method == "two-step":
         reasoner = TwoStepReasoner(config, dataloader, answer_extractor)
+    elif config.reasoning_method == "adaptive-agent":
+        reasoner = AdaptiveAgentReasoner(config, dataloader, answer_extractor)
     elif config.reasoning_method == "three-step":
         # reasoner = ThreeStepReasoner(config, data_loader, answer_extractor)
         raise ValueError(f"Unsupported reasoning method: {config.reasoning_method}")

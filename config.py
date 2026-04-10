@@ -25,6 +25,7 @@ class ReasonerConfig:
                  prompt_path: str = None,
                  shots: str = 'zero',
                  desired_indices: list = None,
+                 force_tool_name: str = None,
                  # Azure OpenAI specific parameters
                  azure_endpoint: str = None,
                  azure_deployment: str = None,
@@ -37,8 +38,14 @@ class ReasonerConfig:
                  # OpenAI-compatible provider settings
                  openai_compatible_base_url: str = None,
                  openai_compatible_api_key: str = None,
+                 openai_compatible_timeout_sec: int = 60,
+                 openai_compatible_max_tokens: int = None,
                  openai_compatible_default_extra_body: Dict[str, Any] = None,
                  openai_compatible_extra_body: Dict[str, Dict[str, Any]] = None,
+                 # Anthropic provider settings
+                 anthropic_api_key: str = None,
+                 anthropic_base_url: str = None,
+                 anthropic_max_tokens: int = 512,
                  # Plan generation parameters
                  num_paths: int = 3,
                  plan_temp: float = 1.0,
@@ -85,6 +92,7 @@ class ReasonerConfig:
         self.prompt_path = prompt_path
         self.shots = shots
         self.desired_indices = desired_indices
+        self.force_tool_name = force_tool_name
         self.azure_endpoint = azure_endpoint
         self.azure_deployment = azure_deployment
         self.azure_managed_identity_client_id = azure_managed_identity_client_id
@@ -94,8 +102,13 @@ class ReasonerConfig:
         self.gemini_thinking_level = gemini_thinking_level
         self.openai_compatible_base_url = openai_compatible_base_url
         self.openai_compatible_api_key = openai_compatible_api_key
+        self.openai_compatible_timeout_sec = openai_compatible_timeout_sec
+        self.openai_compatible_max_tokens = openai_compatible_max_tokens
         self.openai_compatible_default_extra_body = openai_compatible_default_extra_body
         self.openai_compatible_extra_body = openai_compatible_extra_body
+        self.anthropic_api_key = anthropic_api_key
+        self.anthropic_base_url = anthropic_base_url
+        self.anthropic_max_tokens = anthropic_max_tokens
         self.num_paths = num_paths
         self.plan_temp = plan_temp
         self.results_root = results_root
@@ -167,6 +180,7 @@ class ReasonerConfig:
         instance.prompt_path = config_data['prompt_path']
         instance.shots = config_data['shots']
         instance.desired_indices = config_data['desired_indices']
+        instance.force_tool_name = config_data.get('force_tool_name')
         # Azure OpenAI fields are optional for backward compatibility
         instance.azure_endpoint = config_data.get('azure_endpoint')
         instance.azure_deployment = config_data.get('azure_deployment')
@@ -184,8 +198,14 @@ class ReasonerConfig:
         instance.openai_compatible_base_url = config_data.get('openai_compatible_base_url')
         openai_compatible_api_key = config_data.get('openai_compatible_api_key')
         instance.openai_compatible_api_key = cls._resolve_env_value(openai_compatible_api_key)
+        instance.openai_compatible_timeout_sec = config_data.get('openai_compatible_timeout_sec', 60)
+        instance.openai_compatible_max_tokens = config_data.get('openai_compatible_max_tokens')
         instance.openai_compatible_default_extra_body = config_data.get('openai_compatible_default_extra_body')
         instance.openai_compatible_extra_body = config_data.get('openai_compatible_extra_body')
+        anthropic_api_key = config_data.get('anthropic_api_key')
+        instance.anthropic_api_key = cls._resolve_env_value(anthropic_api_key)
+        instance.anthropic_base_url = config_data.get('anthropic_base_url')
+        instance.anthropic_max_tokens = config_data.get('anthropic_max_tokens', 512)
         # Plan generation parameters with defaults
         instance.num_paths = config_data.get('num_paths', 3)
         instance.plan_temp = config_data.get('plan_temp', 1.0)
@@ -197,8 +217,11 @@ class ReasonerConfig:
     def _validate_config(self) -> None:
         """Validate configuration values and types"""
         allowed_providers = {"gemini", "azure-openai", "openai-compatible", "azure", "openai_compatible", "anthropic", "claude"}
+        allowed_reasoning_methods = {"cot", "one-step", "two-step", "three-step", "adaptive-agent"}
         if not isinstance(self.reasoning_method, str):
             raise TypeError("reasoning_method must be a string")
+        if self.reasoning_method not in allowed_reasoning_methods:
+            raise ValueError("reasoning_method must be one of: cot, one-step, two-step, three-step, adaptive-agent")
         if not isinstance(self.api_key, str):
             raise TypeError("api_key must be a string")
         if self.provider is not None and not isinstance(self.provider, str):
@@ -233,6 +256,8 @@ class ReasonerConfig:
             raise ValueError("shots must be a string in ['zero', 'one', 'two', 'three', 'six', 'nine']")
         if self.desired_indices is not None and not isinstance(self.desired_indices, list):
             raise TypeError("desired_indices must be a list or None")
+        if self.force_tool_name is not None and not isinstance(self.force_tool_name, str):
+            raise TypeError("force_tool_name must be a string or None")
         if self.azure_endpoint is not None and not isinstance(self.azure_endpoint, str):
             raise TypeError("azure_endpoint must be a string or None")
         if self.azure_deployment is not None and not isinstance(self.azure_deployment, str):
@@ -257,6 +282,16 @@ class ReasonerConfig:
             raise TypeError("openai_compatible_base_url must be a string or None")
         if self.openai_compatible_api_key is not None and not isinstance(self.openai_compatible_api_key, str):
             raise TypeError("openai_compatible_api_key must be a string or None")
+        if self.openai_compatible_timeout_sec is not None:
+            if not isinstance(self.openai_compatible_timeout_sec, int):
+                raise TypeError("openai_compatible_timeout_sec must be an integer or None")
+            if self.openai_compatible_timeout_sec <= 0:
+                raise ValueError("openai_compatible_timeout_sec must be > 0")
+        if self.openai_compatible_max_tokens is not None:
+            if not isinstance(self.openai_compatible_max_tokens, int):
+                raise TypeError("openai_compatible_max_tokens must be an integer or None")
+            if self.openai_compatible_max_tokens <= 0:
+                raise ValueError("openai_compatible_max_tokens must be > 0")
         if self.openai_compatible_default_extra_body is not None:
             if not isinstance(self.openai_compatible_default_extra_body, dict):
                 raise TypeError("openai_compatible_default_extra_body must be a dictionary or None")
@@ -268,6 +303,15 @@ class ReasonerConfig:
                     raise TypeError("openai_compatible_extra_body keys must be model name strings")
                 if not isinstance(extra_body, dict):
                     raise TypeError("openai_compatible_extra_body values must be dictionaries")
+        if self.anthropic_api_key is not None and not isinstance(self.anthropic_api_key, str):
+            raise TypeError("anthropic_api_key must be a string or None")
+        if self.anthropic_base_url is not None and not isinstance(self.anthropic_base_url, str):
+            raise TypeError("anthropic_base_url must be a string or None")
+        if self.anthropic_max_tokens is not None:
+            if not isinstance(self.anthropic_max_tokens, int):
+                raise TypeError("anthropic_max_tokens must be an integer or None")
+            if self.anthropic_max_tokens <= 0:
+                raise ValueError("anthropic_max_tokens must be > 0")
         if not isinstance(self.num_paths, int) or self.num_paths <= 0:
             raise ValueError("num_paths must be a positive integer")
         if not isinstance(self.plan_temp, (int, float)) or self.plan_temp < 0:
@@ -303,6 +347,7 @@ class ReasonerConfig:
             'prompt_path': self.prompt_path,
             'shots': self.shots,
             'desired_indices': self.desired_indices,
+            'force_tool_name': getattr(self, 'force_tool_name', None),
             'azure_endpoint': self.azure_endpoint,
             'azure_deployment': self.azure_deployment,
             'azure_managed_identity_client_id': self.azure_managed_identity_client_id,
@@ -313,8 +358,13 @@ class ReasonerConfig:
             'gemini_thinking_level': getattr(self, 'gemini_thinking_level', None),
             'openai_compatible_base_url': getattr(self, 'openai_compatible_base_url', None),
             'openai_compatible_api_key': getattr(self, 'openai_compatible_api_key', None),
+            'openai_compatible_timeout_sec': getattr(self, 'openai_compatible_timeout_sec', 60),
+            'openai_compatible_max_tokens': getattr(self, 'openai_compatible_max_tokens', None),
             'openai_compatible_default_extra_body': getattr(self, 'openai_compatible_default_extra_body', None),
             'openai_compatible_extra_body': getattr(self, 'openai_compatible_extra_body', None),
+            'anthropic_api_key': getattr(self, 'anthropic_api_key', None),
+            'anthropic_base_url': getattr(self, 'anthropic_base_url', None),
+            'anthropic_max_tokens': getattr(self, 'anthropic_max_tokens', 512),
             # Plan generation parameters
             'num_paths': getattr(self, 'num_paths', 3),
             'plan_temp': getattr(self, 'plan_temp', 1.0),

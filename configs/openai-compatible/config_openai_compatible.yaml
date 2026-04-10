@@ -9,7 +9,7 @@ plan_model: "" # Required for two-step / three-step
 code_model: "" # Required for two-step / three-step
 test_file: "" # Path to the dataset file
 prompt_path: "" # Path to prompt templates
-reasoning_method: "" # cot, one-step, two-step, three-step
+reasoning_method: "" # cot, one-step, two-step, three-step, adaptive-agent
 shots: "three"
 desired_indices: null
 num_paths: 30

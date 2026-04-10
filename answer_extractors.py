@@ -19,7 +19,7 @@ class AR_LSAT_AnswerExtractor(AnswerExtractor):
     def extract_answer(self, response_text: str, label: str, reasoning_method: str = "cot") -> Tuple[bool, str, Optional[str]]:
         """
         Extract answer from response text and check if it matches the correct label.
-        Only checks for pattern: "The correct option is: [i]" or "The correct option is: [i, j, ...]" where i, j are 0-4.
+        Accepts either "The correct option is: [i]" or "The correct option is: i" where i is 0-4.
         
         Args:
             response_text: The model's response text containing reasoning and answer
@@ -37,12 +37,12 @@ class AR_LSAT_AnswerExtractor(AnswerExtractor):
             else:
                 return False, '[]', 'invalid label format'
 
-            # Check for pattern: "The correct option is: [i]"
-            pattern = r"The correct option is:\s*\[([0-4])\]"
+            # Accept either bracketed or plain numeric answers.
+            pattern = r"The correct option is:\s*(?:\[([0-4])\]|([0-4]))"
             match = re.search(pattern, response_text, re.IGNORECASE)
             
             if match:
-                extracted_idx = int(match.group(1))
+                extracted_idx = int(match.group(1) or match.group(2))
                 is_correct = extracted_idx == label_idx
                 if is_correct:
                     return True, f"[{extracted_idx}]", None
@@ -132,6 +132,49 @@ class FOLIO_AnswerExtractor(AnswerExtractor):
             else:
                 return False, '[]', 'semantic error'
             
+            is_correct = extracted_answer == label
+            if is_correct:
+                return True, f"[{extracted_answer}]", None
+            else:
+                return False, f"[{extracted_answer}]", 'semantic error'
+        elif reasoning_method == "one-step" or reasoning_method == "two-step" or reasoning_method == "three-step":
+            raise ValueError(f"Unsupported reasoning method: {reasoning_method}")
+
+
+class ProverQA_AnswerExtractor(AnswerExtractor):
+    """Answer extractor specifically tailored for ProverQA dataset format"""
+
+    def extract_answer(self, response_text: Union[str, Optional[bool]], label: str, reasoning_method: str = "cot") -> Tuple[bool, str, Optional[str]]:
+        """
+        Extract answer from response text and check if it matches the correct label.
+
+        Args:
+            response_text: The model's response text containing reasoning and answer
+            label: The correct answer option letter (A, B, C)
+            reasoning_method: The reasoning method used (default: "cot")
+
+        Returns:
+            Tuple[bool, str, Optional[str]]: (is_correct, extracted_answer_index, error_type)
+        """
+        if reasoning_method == "cot":
+            keywords = ['A', 'B', 'C', 'True', 'False', 'Uncertain', 'Unknown']
+            positions = {word: response_text.rfind(word) for word in keywords}
+
+            valid_positions = {k: v for k, v in positions.items() if v != -1}
+
+            if not valid_positions:
+                return False, '[]', 'answer not found in choices'
+
+            target = max(valid_positions.items(), key=lambda x: x[1])[0]
+            if target == 'A' or target == 'True':
+                extracted_answer = 'A'
+            elif target == 'B' or target == 'False':
+                extracted_answer = 'B'
+            elif target in ('C', 'Uncertain', 'Unknown'):
+                extracted_answer = 'C'
+            else:
+                return False, '[]', 'semantic error'
+
             is_correct = extracted_answer == label
             if is_correct:
                 return True, f"[{extracted_answer}]", None
