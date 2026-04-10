@@ -134,45 +134,45 @@
         "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-gpt-5.4-zero_shot-bad2f8eb-f9c7-4544-b723-4480c20c236d",
         "note": "Finished full run on the ProverQA hard split."
       },
-      {
-        "id": "minimax-m25-proverqa-inflight",
-        "name": "MiniMax M2.5",
-        "provider": "MiniMax",
-        "status": "live",
-        "statusLabel": "In progress",
-        "accuracy": 0.7342,
-        "sampleCount": 158,
-        "totalSamples": 500,
-        "toolRate": 0.2025,
-        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-MiniMax-M2.5-zero_shot-727c7546-9600-48ed-a50f-ecca3ce68213",
-        "note": "Live job (main.py minimax_m25_proverqa_hard). Accuracy/toolRate on completed summaries only; Samples column is progress."
-      },
-      {
-        "id": "claude-sonnet-4-6-proverqa-inflight",
-        "name": "Claude Sonnet 4.6",
-        "provider": "Anthropic",
-        "status": "live",
-        "statusLabel": "In progress",
-        "accuracy": 0.6839,
-        "sampleCount": 155,
-        "totalSamples": 500,
-        "toolRate": 1.0,
-        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-claude-sonnet-4-6-zero_shot-87993032-a689-45bf-a17a-91d526f0f7a0",
-        "note": "Live job (anthropic ProverQA Sonnet 4.6). Interim metrics on saved summaries only."
-      },
-      {
-        "id": "glm-51-proverqa-inflight",
-        "name": "GLM-5.1",
-        "provider": "Zhipu",
-        "status": "live",
-        "statusLabel": "In progress",
-        "accuracy": 0.5,
-        "sampleCount": 10,
-        "totalSamples": 500,
-        "toolRate": 0.1,
-        "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-glm-5.1-zero_shot-1976e4e2-3008-4107-a9b1-b025260714b7",
-        "note": "Live job (openai-compatible glm51_proverqa_hard). Early partial; refresh leaderboard JSON after more summaries land."
-      }
+    {
+      "id": "minimax-m25-proverqa-inflight",
+      "name": "MiniMax M2.5",
+      "provider": "MiniMax",
+      "status": "live",
+      "statusLabel": "In progress",
+      "accuracy": 0.7342,
+      "sampleCount": 169,
+      "totalSamples": 500,
+      "toolRate": 0.2025,
+      "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-MiniMax-M2.5-zero_shot-727c7546-9600-48ed-a50f-ecca3ce68213",
+      "note": "Live job (main.py minimax_m25_proverqa_hard). Progress updated to 169/500; remaining indices start at 169."
+    },
+    {
+      "id": "claude-sonnet-4-6-proverqa-inflight",
+      "name": "Claude Sonnet 4.6",
+      "provider": "Anthropic",
+      "status": "live",
+      "statusLabel": "In progress",
+      "accuracy": 0.6839,
+      "sampleCount": 170,
+      "totalSamples": 500,
+      "toolRate": 1.0,
+      "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-claude-sonnet-4-6-zero_shot-87993032-a689-45bf-a17a-91d526f0f7a0",
+      "note": "Live job (anthropic ProverQA Sonnet 4.6). Progress updated to 170/500; remaining indices start at 170."
+    },
+    {
+      "id": "glm-51-proverqa-inflight",
+      "name": "GLM-5.1",
+      "provider": "Zhipu",
+      "status": "live",
+      "statusLabel": "In progress",
+      "accuracy": 0.5,
+      "sampleCount": 19,
+      "totalSamples": 500,
+      "toolRate": 0.1,
+      "runPath": "results/results_2026-04-09/adaptive-agent-ProverQA-model-glm-5.1-zero_shot-1976e4e2-3008-4107-a9b1-b025260714b7",
+      "note": "Partial GLM-5.1 coverage across multiple smoke runs. Union coverage is 19/500; remaining indices start at 19."
+    }
     ]
   }
 }
